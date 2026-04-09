@@ -70,6 +70,22 @@
           <div class="csv-preview-more" id="csvPreviewMore" style="display:none;"></div>
         </div>
 
+        <!-- Authentication (Optional) -->
+        <details class="auth-section" id="authSectionCsv">
+          <summary class="auth-toggle">🔐 Authentication (Optional)</summary>
+          <div class="auth-fields">
+            <div class="form-group">
+              <label for="authUserCsv">SSO ID / Username</label>
+              <input type="text" id="authUserCsv" placeholder="e.g. 503309389" autocomplete="username">
+            </div>
+            <div class="form-group">
+              <label for="authPassCsv">Password</label>
+              <input type="password" id="authPassCsv" placeholder="Enter password" autocomplete="current-password">
+            </div>
+            <p class="auth-hint">Required for internal/corporate wikis that need SSO login.</p>
+          </div>
+        </details>
+
         <!-- Start Button -->
         <div class="btn-group">
           <button class="btn btn-primary" id="btnCsvExport" disabled>
@@ -108,6 +124,22 @@
               </button>
             </div>
           </div>
+
+          <!-- Authentication (Optional) -->
+          <details class="auth-section" id="authSectionSingle">
+            <summary class="auth-toggle">🔐 Authentication (Optional)</summary>
+            <div class="auth-fields">
+              <div class="form-group">
+                <label for="authUser">SSO ID / Username</label>
+                <input type="text" id="authUser" placeholder="e.g. 503309389" autocomplete="username">
+              </div>
+              <div class="form-group">
+                <label for="authPass">Password</label>
+                <input type="password" id="authPass" placeholder="Enter password" autocomplete="current-password">
+              </div>
+              <p class="auth-hint">Required for internal/corporate wikis that need SSO login.</p>
+            </div>
+          </details>
         </form>
       </div>
     </div>
@@ -492,10 +524,14 @@
       btnCsvLabel.innerHTML = '<span class="spinner"></span> Exporting…';
 
       try {
+        const authUserCsv = document.getElementById('authUserCsv').value.trim();
+        const authPassCsv = document.getElementById('authPassCsv').value;
+        const payload = { mode: 'batch', urls };
+        if (authUserCsv) { payload.auth_user = authUserCsv; payload.auth_pass = authPassCsv; }
         const response = await fetch('export.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mode: 'batch', urls })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
@@ -701,10 +737,14 @@
       btnLabel.innerHTML = '<span class="spinner"></span> Exporting…';
 
       try {
+        const authUser = document.getElementById('authUser').value.trim();
+        const authPass = document.getElementById('authPass').value;
+        const payload = { url, count: parseInt(count) };
+        if (authUser) { payload.auth_user = authUser; payload.auth_pass = authPass; }
         const response = await fetch('export.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, count: parseInt(count) })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
