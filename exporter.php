@@ -148,6 +148,7 @@ function resolveHost($host)
 
 function fetchUrl($url)
 {
+    global $authUser, $authPass, $authCookieJar;
     debugLog("Fetching URL: {$url}");
 
     // Realistic browser User-Agent (avoids blocks from Wikipedia and other sites)
@@ -209,6 +210,21 @@ function fetchUrl($url)
         $ch = curl_init();
         curl_setopt_array($ch, $curlOpts);
 
+        // === AUTHENTICATION ===
+        if (!empty($authUser)) {
+            debugLog("Auth enabled for user: {$authUser}");
+
+            // Set credentials for Basic/Digest/NTLM auth (try any)
+            curl_setopt($ch, CURLOPT_USERPWD, "{$authUser}:{$authPass}");
+            curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+
+            // Use cookie jar for session persistence across requests
+            if (!empty($authCookieJar)) {
+                curl_setopt($ch, CURLOPT_COOKIEJAR, $authCookieJar);
+                curl_setopt($ch, CURLOPT_COOKIEFILE, $authCookieJar);
+            }
+        }
+
         $html = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
@@ -230,6 +246,16 @@ function fetchUrl($url)
 
                 $ch = curl_init();
                 curl_setopt_array($ch, $curlOpts);
+
+                // Re-apply auth for retry
+                if (!empty($authUser)) {
+                    curl_setopt($ch, CURLOPT_USERPWD, "{$authUser}:{$authPass}");
+                    curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+                    if (!empty($authCookieJar)) {
+                        curl_setopt($ch, CURLOPT_COOKIEJAR, $authCookieJar);
+                        curl_setopt($ch, CURLOPT_COOKIEFILE, $authCookieJar);
+                    }
+                }
                 $html = curl_exec($ch);
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 $curlError = curl_error($ch);
@@ -675,6 +701,7 @@ function extractFolderName($url)
  */
 function downloadImage($imageUrl, $targetDir)
 {
+    global $authUser, $authPass, $authCookieJar;
     if (empty($imageUrl) || strpos($imageUrl, 'data:') === 0) {
         return null;
     }
@@ -733,6 +760,16 @@ function downloadImage($imageUrl, $targetDir)
             $scheme = isset($parsed['scheme']) ? $parsed['scheme'] : 'https';
             $port = $scheme === 'https' ? 443 : 80;
             curl_setopt($ch, CURLOPT_RESOLVE, ["{$host}:{$port}:{$ip}"]);
+        }
+    }
+
+    // Apply auth if available
+    if (!empty($authUser)) {
+        curl_setopt($ch, CURLOPT_USERPWD, "{$authUser}:{$authPass}");
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+        if (!empty($authCookieJar)) {
+            curl_setopt($ch, CURLOPT_COOKIEJAR, $authCookieJar);
+            curl_setopt($ch, CURLOPT_COOKIEFILE, $authCookieJar);
         }
     }
 
@@ -1041,6 +1078,17 @@ if (!$input) {
     sendError('Invalid request. Please provide valid JSON input.');
 }
 
+// Global authentication credentials
+$authUser = isset($input['auth_user']) ? trim($input['auth_user']) : '';
+$authPass = isset($input['auth_pass']) ? $input['auth_pass'] : '';
+$authCookieJar = '';
+
+if (!empty($authUser)) {
+    // Create a temp cookie file for session persistence
+    $authCookieJar = sys_get_temp_dir() . '/wikiexporter_cookies_' . md5($authUser) . '.txt';
+    debugLog("Authentication enabled for user: {$authUser}");
+}
+
 // Ensure exports directory exists and is writable
 $exportsDir = __DIR__ . '/exports';
 if (!is_dir($exportsDir)) {
@@ -1339,4 +1387,3 @@ if ($mode === 'batch') {
 
     sendLog("Export complete! {$totalPages} pages exported.", 'success');
 }
-
