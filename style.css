@@ -1073,3 +1073,65 @@ body::before {
     align-items: stretch;
   }
 }
+
+/* ===== Authentication Section ===== */
+.auth-section {
+  margin-top: 16px;
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.auth-toggle {
+  cursor: pointer;
+  padding: 12px 18px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s, background 0.2s;
+  user-select: none;
+}
+
+.auth-toggle:hover {
+  color: var(--accent-hover);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.auth-toggle::-webkit-details-marker { display: none; }
+
+.auth-toggle::after {
+  content: '▸';
+  margin-left: auto;
+  transition: transform 0.2s;
+  font-size: 0.8em;
+}
+
+.auth-section[open] .auth-toggle::after {
+  transform: rotate(90deg);
+}
+
+.auth-fields {
+  padding: 12px 18px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid var(--border-glass);
+}
+
+.auth-fields .form-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.auth-hint {
+  width: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
